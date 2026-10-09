@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+[10/9/2026 4:01 PM] €¥uvan_unique _boyz1: <!DOCTYPE html>
 <html lang="am">
 <head>
   <meta charset="UTF-8">
@@ -8,7 +8,7 @@
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
     body { background-color: #0f172a; color: #f8fafc; padding-bottom: 75px; }
 
     /* Top Stats Bar */
@@ -49,7 +49,7 @@
     .num-pill { background: #1e293b; text-align: center; padding: 3px 0; border-radius: 3px; font-size: 11px; color: #94a3b8; }
     .num-pill.called { background: #10b981; color: #fff; font-weight: bold; }
 
-    /* Cards / Forms */
+    /* Info Cards */
     .card { background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 15px; line-height: 2; border: 1px solid #334155; }
 
     /* Bottom Navigation Bar */
@@ -59,7 +59,7 @@
   </style>
 </head>
 <body>
-<!-- Top Header Stats -->
+[10/9/2026 4:01 PM] €¥uvan_unique _boyz1: <!-- Top Header Stats -->
   <header class="top-bar">
     <div class="stat-box">Stake: <strong>50 ETB</strong></div>
     <div class="stat-box">Main: <strong id="top-main-wallet">0.00</strong> ETB</div>
@@ -163,7 +163,7 @@
 
     function toggleCartela(id, btn) {
       if (selectedCartelas.includes(id)) {
-	  selectedCartelas = selectedCartelas.filter(item => item !== id);
+[10/9/2026 4:01 PM] €¥uvan_unique _boyz1: selectedCartelas = selectedCartelas.filter(item => item !== id);
         btn.classList.remove('selected');
         delete generatedCardsData[id];
       } else {
@@ -273,7 +273,7 @@
       document.getElementById('game-view').classList.add('active');
       
       const inGame = document.getElementById('in-game-cards');
-	  inGame.innerHTML = '';
+[10/9/2026 4:01 PM] €¥uvan_unique _boyz1: inGame.innerHTML = '';
       selectedCartelas.forEach(id => {
         let html = <div class="bingo-card-wrapper"><div class="cartela-header">ካርቴላ #${id}</div><div class="cartela-5x5">;
         const cols = ['B', 'I', 'N', 'G', 'O'];
@@ -310,17 +310,16 @@
 
     socket.on(wallet_update_${currentUserId}, (w) => {
       updateWalletUI(w);
-      alert("ክፍያዎ ተረጋግጦ ዋሌትዎ ሞልቷል!");
     });
 
     function updateWalletUI(w) {
       if (!w) return;
-      document.getElementById('top-main-wallet').innerText = w.main.toFixed(2);
-      document.getElementById('top-play-wallet').innerText = w.play.toFixed(2);
-      document.getElementById('wallet-main').innerText = ${w.main.toFixed(2)} ETB;
-      document.getElementById('wallet-play').innerText = ${w.play.toFixed(2)} ETB;
-      document.getElementById('prof-main').innerText = ${w.main.toFixed(2)} ETB;
-      document.getElementById('prof-play').innerText = ${w.play.toFixed(2)} ETB;
+      document.getElementById('top-main-wallet').innerText = Number(w.main).toFixed(2);
+      document.getElementById('top-play-wallet').innerText = Number(w.play).toFixed(2);
+      document.getElementById('wallet-main').innerText = ${Number(w.main).toFixed(2)} ETB;
+      document.getElementById('wallet-play').innerText = ${Number(w.play).toFixed(2)} ETB;
+      document.getElementById('prof-main').innerText = ${Number(w.main).toFixed(2)} ETB;
+      document.getElementById('prof-play').innerText = ${Number(w.play).toFixed(2)} ETB;
     }
 
     function switchTab(viewId, btn) {
