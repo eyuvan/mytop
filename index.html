@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Habesha Bingo</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #0f172a; color: #f8fafc; padding-bottom: 75px; }
+
+    /* Top Stats Bar */
+    .top-bar { display: flex; justify-content: space-around; background: #1e293b; padding: 12px 5px; font-size: 13px; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid #eab308; }
+    .stat-box { background: #0f172a; padding: 6px 10px; border-radius: 6px; border: 1px solid #334155; }
+    .timer-box { color: #ef4444; font-weight: bold; }
+
+    /* Tabs Switching */
+    .view { display: none; padding: 15px; }
+    .view.active { display: block; }
+
+    .section-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .badge { background: #eab308; color: #000; font-weight: bold; font-size: 12px; padding: 4px 10px; border-radius: 12px; }
+
+    /* 1 - 600 Cartela Grid */
+    .cartela-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; max-height: 220px; overflow-y: auto; background: #1e293b; padding: 10px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 15px; }
+    .cartela-btn { background: #334155; color: #fff; border: none; padding: 10px 0; border-radius: 4px; font-weight: bold; cursor: pointer; }
+    .cartela-btn.selected { background: #10b981; color: #fff; box-shadow: 0 0 8px #10b981; }
+
+    /* 5x5 Cartela Card */
+    .bingo-card-wrapper { background: #1e293b; border-radius: 8px; padding: 12px; margin-top: 15px; border: 1px solid #475569; }
+    .cartela-header { font-weight: bold; color: #38bdf8; margin-bottom: 8px; text-align: center; }
+    .cartela-5x5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+    .cell { background: #0f172a; padding: 10px 0; text-align: center; border-radius: 4px; font-weight: bold; font-size: 14px; border: 1px solid #334155; }
+    .cell.free { background: #eab308; color: #000; }
+    .cell.marked { background: #ef4444; color: #fff; transform: scale(0.96); }
+
+    /* Caller Screen & Board */
+    .game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .game-id-badge { background: #334155; padding: 6px 12px; border-radius: 6px; font-weight: bold; color: #38bdf8; }
+    .caller-screen { background: #1e293b; border: 2px solid #38bdf8; border-radius: 12px; padding: 8px 20px; text-align: center; }
+    .caller-title { font-size: 11px; color: #94a3b8; }
+    .caller-ball { font-size: 28px; font-weight: 900; color: #38bdf8; }
+
+    .bingo-board { display: flex; gap: 4px; margin-bottom: 15px; }
+    .board-col { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+    .col-title { background: #4f46e5; text-align: center; padding: 4px; font-weight: bold; border-radius: 3px; font-size: 11px; }
+    .num-pill { background: #1e293b; text-align: center; padding: 3px 0; border-radius: 3px; font-size: 11px; color: #94a3b8; }
+    .num-pill.called { background: #10b981; color: #fff; font-weight: bold; }
+
+    /* Cards / Forms */
+    .card { background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 15px; line-height: 2; border: 1px solid #334155; }
+
+    /* Bottom Navigation Bar */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: #0f172a; border-top: 1px solid #334155; height: 60px; z-index: 1000; }
+    .nav-item { flex: 1; background: transparent; border: none; color: #94a3b8; font-size: 13px; font-weight: bold; cursor: pointer; }
+    .nav-item.active { color: #eab308; }
+  </style>
+</head>
+<body>
+<!-- Top Header Stats -->
+  <header class="top-bar">
+    <div class="stat-box">Stake: <strong>50 ETB</strong></div>
+    <div class="stat-box">Main: <strong id="top-main-wallet">0.00</strong> ETB</div>
+    <div class="stat-box">Play: <strong id="top-play-wallet">10.00</strong> ETB</div>
+    <div class="stat-box timer-box">⏱ <strong id="countdown">49</strong>s</div>
+  </header>
+
+  <!-- 1. LOBBY VIEW -->
+  <main id="lobby-view" class="view active">
+    <div class="section-title">
+      <h3>ካርቴላ ይምረጡ (ከ 1 እስከ 3)</h3>
+      <span class="badge"><span id="selected-count">0</span>/3</span>
+    </div>
+    
+    <div class="cartela-grid" id="cartela-container"></div>
+    <div id="active-cards-container"></div>
+  </main>
+
+  <!-- 2. GAMEPLAY VIEW -->
+  <main id="game-view" class="view">
+    <div class="game-header">
+      <div class="game-id-badge">Game ID: <span id="current-game-id">#0001</span></div>
+      <div class="caller-screen">
+        <div class="caller-title">የወጣው ቁጥር</div>
+        <div class="caller-ball" id="current-call">--</div>
+      </div>
+    </div>
+
+    <div class="bingo-board">
+      <div class="board-col" id="col-B"><div class="col-title">B</div></div>
+      <div class="board-col" id="col-I"><div class="col-title">I</div></div>
+      <div class="board-col" id="col-N"><div class="col-title">N</div></div>
+      <div class="board-col" id="col-G"><div class="col-title">G</div></div>
+      <div class="board-col" id="col-O"><div class="col-title">O</div></div>
+    </div>
+    <div id="in-game-cards"></div>
+  </main>
+
+  <!-- 3. WALLET VIEW -->
+  <section id="wallet-view" class="view">
+    <h2>የሂሳብ ቋት (Wallet)</h2>
+    <div class="card">
+      <p>💰 Main Wallet: <strong id="wallet-main">0.00 ETB</strong></p>
+      <p>🎮 Play Wallet: <strong id="wallet-play">10.00 ETB</strong></p>
+    </div>
+  </section>
+
+  <!-- 4. HISTORY VIEW -->
+  <section id="history-view" class="view">
+    <h2>የጨዋታ ታሪክ (History)</h2>
+    <div class="card">
+      <p>ምንም ያለፈ ጨዋታ አልተገኘም።</p>
+    </div>
+  </section>
+
+  <!-- 5. PROFILE VIEW -->
+  <section id="profile-view" class="view">
+    <h2>የተጠቃሚ መረጃ (Profile)</h2>
+    <div class="card">
+      <p><strong>Telegram ID:</strong> <span id="prof-id">@user</span></p>
+      <p><strong>ስልክ ቁጥር:</strong> 0928361886</p>
+      <p><strong>Main Wallet:</strong> <span id="prof-main">0.00 ETB</span></p>
+      <p><strong>Play Wallet:</strong> <span id="prof-play">10.00 ETB</span></p>
+    </div>
+  </section>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="switchTab('lobby-view', this)">🎮 Game</button>
+    <button class="nav-item" onclick="switchTab('wallet-view', this)">💳 Wallet</button>
+    <button class="nav-item" onclick="switchTab('history-view', this)">📜 History</button>
+    <button class="nav-item" onclick="switchTab('profile-view', this)">👤 Profile</button>
+  </nav>
+
+  <script>
+    const socket = io();
+    const tg = window.Telegram?.WebApp;
+    let currentUserId = "guest_" + Math.floor(Math.random() * 10000);
+
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      if (tg.initDataUnsafe?.user) {
+        currentUserId = String(tg.initDataUnsafe.user.id);
+        document.getElementById('prof-id').innerText = @${tg.initDataUnsafe.user.username || currentUserId};
+      }
+    }
+
+    let selectedCartelas = [];
+    let generatedCardsData = {};
+
+    // 1 - 600 Cartela መፍጠሪያ
+    const cartelaContainer = document.getElementById('cartela-container');
+    for (let i = 1; i <= 600; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'cartela-btn';
+      btn.innerText = i;
+      btn.onclick = () => toggleCartela(i, btn);
+      cartelaContainer.appendChild(btn);
+    }
+
+    function toggleCartela(id, btn) {
+      if (selectedCartelas.includes(id)) {
+	  selectedCartelas = selectedCartelas.filter(item => item !== id);
+        btn.classList.remove('selected');
+        delete generatedCardsData[id];
+      } else {
+        if (selectedCartelas.length >= 3) {
+          alert("ከ 3 ካርቴላ በላይ መምረጥ አይቻልም!");
+          return;
+        }
+        selectedCartelas.push(id);
+        btn.classList.add('selected');
+        generatedCardsData[id] = generateMatrix();
+      }
+      document.getElementById('selected-count').innerText = selectedCartelas.length;
+      renderLobbyCards();
+    }
+
+    function generateMatrix() {
+      const getCol = (min, max) => {
+        let s = new Set();
+        while (s.size < 5) s.add(Math.floor(Math.random() * (max - min + 1)) + min);
+        return Array.from(s);
+      };
+      return {
+        B: getCol(1, 15),
+        I: getCol(16, 30),
+        N: getCol(31, 45),
+        G: getCol(46, 60),
+        O: getCol(61, 75)
+      };
+    }
+
+    function renderLobbyCards() {
+      const container = document.getElementById('active-cards-container');
+      container.innerHTML = '';
+      selectedCartelas.forEach(id => {
+        let html = <div class="bingo-card-wrapper"><div class="cartela-header">ካርቴላ #${id}</div><div class="cartela-5x5">;
+        const cols = ['B', 'I', 'N', 'G', 'O'];
+        for (let r = 0; r < 5; r++) {
+          for (let c = 0; c < 5; c++) {
+            if (r === 2 && c === 2) {
+              html += <div class="cell free">FREE</div>;
+            } else {
+              const val = generatedCardsData[id][cols[c]][r];
+              html += <div class="cell" id="card-${id}-${val}">${val}</div>;
+            }
+          }
+        }
+        html += </div></div>;
+        container.innerHTML += html;
+      });
+    }
+
+    // 1-75 Master Board
+    const ranges = { B: [1, 15], I: [16, 30], N: [31, 45], G: [46, 60], O: [61, 75] };
+    for (let k in ranges) {
+      const col = document.getElementById(col-${k});
+      for (let n = ranges[k][0]; n <= ranges[k][1]; n++) {
+        const p = document.createElement('div');
+        p.className = 'num-pill';
+        p.id = pill-${n};
+        p.innerText = n;
+        col.appendChild(p);
+      }
+    }
+
+    // --- MULTIPLAYER SERVER SYNC ---
+    socket.emit("join_game", { user_id: currentUserId });
+
+    socket.on("sync_state", (state) => {
+      document.getElementById('countdown').innerText = state.countdown;
+      document.getElementById('current-game-id').innerText = #${String(state.game_id).padStart(4, '0')};
+      updateWalletUI(state.wallets);
+      if (state.phase === "playing") {
+        switchToGameView();
+        if (state.called) {
+          state.called.forEach(num => markNumberEverywhere(num));
+        }
+      }
+    });
+
+    socket.on("timer_update", (data) => {
+      document.getElementById('countdown').innerText = data.countdown;
+      document.getElementById('current-game-id').innerText = #${String(data.game_id).padStart(4, '0')};
+    });
+
+    socket.on("game_started", (data) => {
+      socket.emit("register_cartelas", { user_id: currentUserId, cards: generatedCardsData });
+      switchToGameView();
+    });
+
+    socket.on("number_called", (data) => {
+      document.getElementById('current-call').innerText = data.full;
+      markNumberEverywhere(data.number);
+    });
+
+    function markNumberEverywhere(num) {
+      const pill = document.getElementById(pill-${num});
+      if (pill) pill.classList.add('called');
+
+      selectedCartelas.forEach(id => {
+        const cell = document.getElementById(card-${id}-${num});
+        if (cell) cell.classList.add('marked');
+      });
+    }
+
+    function switchToGameView() {
+      document.getElementById('lobby-view').classList.remove('active');
+      document.getElementById('game-view').classList.add('active');
+      
+      const inGame = document.getElementById('in-game-cards');
+	  inGame.innerHTML = '';
+      selectedCartelas.forEach(id => {
+        let html = <div class="bingo-card-wrapper"><div class="cartela-header">ካርቴላ #${id}</div><div class="cartela-5x5">;
+        const cols = ['B', 'I', 'N', 'G', 'O'];
+        for (let r = 0; r < 5; r++) {
+          for (let c = 0; c < 5; c++) {
+            if (r === 2 && c === 2) {
+              html += <div class="cell free">FREE</div>;
+            } else {
+              const val = generatedCardsData[id][cols[c]][r];
+              html += <div class="cell" id="card-${id}-${val}">${val}</div>;
+            }
+          }
+        }
+        html += </div></div>;
+        inGame.innerHTML += html;
+      });
+    }
+
+    socket.on("game_over", (data) => {
+      alert(data.message);
+      setTimeout(() => {
+        document.getElementById('game-view').classList.remove('active');
+        document.getElementById('lobby-view').classList.add('active');
+        
+        selectedCartelas = [];
+        generatedCardsData = {};
+        document.querySelectorAll('.cartela-btn').forEach(b => b.classList.remove('selected'));
+        document.getElementById('selected-count').innerText = "0";
+        document.getElementById('active-cards-container').innerHTML = '';
+        document.querySelectorAll('.num-pill').forEach(p => p.classList.remove('called'));
+        document.getElementById('current-call').innerText = "--";
+      }, 4000);
+    });
+
+    socket.on(wallet_update_${currentUserId}, (w) => {
+      updateWalletUI(w);
+      alert("ክፍያዎ ተረጋግጦ ዋሌትዎ ሞልቷል!");
+    });
+
+    function updateWalletUI(w) {
+      if (!w) return;
+      document.getElementById('top-main-wallet').innerText = w.main.toFixed(2);
+      document.getElementById('top-play-wallet').innerText = w.play.toFixed(2);
+      document.getElementById('wallet-main').innerText = ${w.main.toFixed(2)} ETB;
+      document.getElementById('wallet-play').innerText = ${w.play.toFixed(2)} ETB;
+      document.getElementById('prof-main').innerText = ${w.main.toFixed(2)} ETB;
+      document.getElementById('prof-play').innerText = ${w.play.toFixed(2)} ETB;
+    }
+
+    function switchTab(viewId, btn) {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>
