@@ -16,6 +16,7 @@
       top: 0; 
       z-index: 100; 
       border-bottom: 2px solid #eab308; 
+      display: none; /* በመጀመሪያው ስክሪን ላይ አይታይም */
     }
     .stat-row {
       display: flex;
@@ -39,36 +40,42 @@
     .timer-box { color: #ef4444; font-weight: bold; border-color: #ef4444; }
     .timer-box strong { color: #ef4444; }
 
-    /* Screen Views */
+    /* Views */
     .view { display: none; padding: 16px; }
     .view.active { display: block !important; }
 
-    /* Screen 1: Welcome & Stake Selector Screen */
+    /* Screen 1: Welcome Screen Only */
     .welcome-container {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 60vh;
+      min-height: 85vh;
       text-align: center;
-      gap: 20px;
+      gap: 22px;
     }
     .welcome-title {
-      font-size: 26px;
+      font-size: 28px;
       font-weight: 900;
       color: #eab308;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
+    .welcome-quote {
+      font-size: 18px;
+      font-weight: bold;
+      color: #38bdf8;
+      font-style: italic;
+      margin-top: -8px;
+    }
     .welcome-subtitle {
       font-size: 15px;
       color: #94a3b8;
-      margin-top: -10px;
     }
     .stake-choice-box {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 16px;
       width: 100%;
       max-width: 320px;
       margin-top: 10px;
@@ -99,9 +106,21 @@
       font-weight: normal;
     }
 
-    /* Screen 2: Cartela Selection */
+    /* Screen 2: Cartela Selection Screen */
     .section-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .badge { background: #eab308; color: #000; font-weight: bold; font-size: 12px; padding: 4px 10px; border-radius: 12px; }
+    
+    .refresh-btn {
+      background: #334155;
+      color: #38bdf8;
+      border: 1px solid #475569;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .refresh-btn:active { transform: scale(0.95); background: #475569; }
 
     /* 1 - 600 Cartela Grid */
     .cartela-grid { 
@@ -117,8 +136,8 @@
       margin-bottom: 15px; 
     }
     .cartela-btn { 
-      background: #334155; 
-      color: #fff; 
+      background: #334155;
+	  color: #fff; 
       border: 1px solid #475569; 
       padding: 8px 0; 
       border-radius: 6px; 
@@ -134,13 +153,14 @@
       color: #ffffff !important; 
       box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); 
     }
-	/* 5x5 Cartela Card */
+
+    /* 5x5 Cartela Card */
     .bingo-card-wrapper { background: #1e293b; border-radius: 8px; padding: 10px; margin-top: 12px; border: 1px solid #475569; }
     .cartela-header { font-weight: bold; color: #38bdf8; margin-bottom: 6px; text-align: center; font-size: 13px; }
     .cartela-5x5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
     .cell { background: #0f172a; padding: 8px 0; text-align: center; border-radius: 4px; font-weight: bold; font-size: 13px; border: 1px solid #334155; }
     .cell.free { background: #eab308; color: #000; }
-    .cell.marked { background: #ef4444; color: #fff; }
+    .cell.marked { background: #ef4444; color: #fff; font-weight: bold; }
 
     /* Screen 3: Live Gameplay */
     .game-caller-bar { 
@@ -166,13 +186,13 @@
     /* Info Cards */
     .card { background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 15px; line-height: 2; border: 1px solid #334155; }
 
-    /* Bottom Nav */
+    /* Bottom Navigation Bar */
     .bottom-nav { 
       position: fixed; 
       bottom: 0; 
       left: 0; 
       right: 0; 
-      display: flex; 
+      display: none; /* በመጀመሪያው ስክሪን ላይ አይታይም */
       background: #0f172a; 
       border-top: 2px solid #334155; 
       height: 60px; 
@@ -195,16 +215,16 @@
 </head>
 <body>
 
-  <!-- Top Header Stats -->
-  <header class="top-bar">
-    <!-- Lobby / Welcome ሲሆን የሚታዩት -->
+  <!-- Top Header Stats (ሁለተኛው ስክሪን ሲገባ ብቻ ይታያል) -->
+  <header class="top-bar" id="app-top-bar">
+    <!-- Lobby Mode -->
     <div id="lobby-stats" class="stat-row">
       <div class="stat-box">Main: <strong id="top-main-wallet">0.00</strong> ETB</div>
       <div class="stat-box">Play: <strong id="top-play-wallet">10.00</strong> ETB</div>
       <div class="stat-box timer-box">⏱ <strong id="countdown">49</strong>s</div>
     </div>
 
-    <!-- ሰዓቱ 0 ሲሆን ብቻ የሚታዩት -->
+    <!-- Active Gameplay Mode (ሰዓቱ 0 ሲሆን ብቻ የሚታይ) -->
     <div id="gameplay-stats" class="stat-row" style="display: none;">
       <div class="stat-box">Game ID: <strong id="top-game-id">#0001</strong></div>
       <div class="stat-box">Players: <strong id="top-players">0</strong></div>
@@ -213,12 +233,12 @@
       <div class="stat-box">Called: <strong id="top-called">0</strong>/75</div>
     </div>
   </header>
-
-  <!-- SCREEN 1: WELCOME & CHOOSE STAKE -->
+  <!-- SCREEN 1: WELCOME SCREEN (Top Bar & Bottom Nav የሉትም) -->
   <main id="welcome-view" class="view active">
     <div class="welcome-container">
       <div>
         <h1 class="welcome-title">Welcome to Habesha Bingo</h1>
+        <p class="welcome-quote">"ከመልክ ዕድል ያምራል"</p>
         <p class="welcome-subtitle">Choose your stake to start game</p>
       </div>
 
@@ -235,22 +255,26 @@
       </div>
     </div>
   </main>
-  <!-- SCREEN 2: CARTELA SELECTION (ሁለተኛው ስክሪን) -->
+
+  <!-- SCREEN 2: CARTELA SELECTION SCREEN (1 - 600, Refresh Button) -->
   <main id="lobby-view" class="view">
     <div class="section-title">
       <div>
-        <h3 id="cartela-screen-title">ካርቴላ ይምረጡ</h3>
+        <h3>ካርቴላ ይምረጡ</h3>
         <small style="color: #38bdf8;" id="stake-status-info">Play: 10 Birr</small>
       </div>
-      <span class="badge"><span id="selected-count">0</span>/<span id="max-allowed-cartelas">1</span></span>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button class="refresh-btn" onclick="refreshCartelaMatrix()">🔄 Refresh</button>
+        <span class="badge"><span id="selected-count">0</span>/<span id="max-allowed-cartelas">1</span></span>
+      </div>
     </div>
 
-    <!-- 1 - 600 Buttons -->
+    <!-- 1 - 600 Cartela Buttons -->
     <div class="cartela-grid" id="cartela-container"></div>
     <div id="active-cards-container"></div>
   </main>
 
-  <!-- SCREEN 3: LIVE GAMEPLAY (ደቂቃው 0 ሲሆን የሚከፈተው) -->
+  <!-- SCREEN 3: LIVE GAMEPLAY SCREEN (ደቂቃው 0 ሲሆን የሚከፈት) -->
   <main id="game-view" class="view">
     <div class="game-caller-bar">
       <div>
@@ -301,8 +325,8 @@
     </div>
   </section>
 
-  <!-- Bottom Navigation -->
-  <nav class="bottom-nav">
+  <!-- Bottom Navigation (ሁለተኛው ስክሪን ሲገባ ብቻ ይታያል) -->
+  <nav class="bottom-nav" id="app-bottom-nav">
     <button class="nav-item active" onclick="navigate('game-tab', this)">🎮 Game</button>
     <button class="nav-item" onclick="navigate('wallet-view', this)">💳 Wallet</button>
     <button class="nav-item" onclick="navigate('history-view', this)">📜 History</button>
@@ -317,11 +341,11 @@
     var seconds = 49;
     var gameId = 1;
     var calledBalls = [];
+    var calledSet = new Set();
     var gameInterval = null;
     var isPlaying = false;
     var currentActiveView = 'welcome-view';
-
-    // ደረጃ 1፦ የመጀመሪያው ስክሪን ላይ Stake መምረጥና ወደ 2ኛው ስክሪን ማለፍ
+	// 1. ከመጀመሪያው ስክሪን ወደ ሁለተኛው ስክሪን ማለፍ
     function selectStakeAndProceed(stakeAmount, maxLimit) {
       if (isPlaying) return;
       currentStake = stakeAmount;
@@ -331,7 +355,11 @@
       document.getElementById('max-allowed-cartelas').innerText = maxCartelas;
       document.getElementById('stake-status-info').innerText = "Play: " + currentStake + " Birr (Max: " + maxCartelas + " Cartela)";
 
-      // Reset any previous selection
+      // Top Bar እና Navigation Bar ማሳየት
+      document.getElementById('app-top-bar').style.display = 'block';
+      document.getElementById('app-bottom-nav').style.display = 'flex';
+
+      // Reset selection
       selectedCartelas = [];
       generatedCardsData = {};
       document.querySelectorAll('.cartela-btn').forEach(function(b) { b.classList.remove('selected'); });
@@ -339,10 +367,11 @@
       document.getElementById('active-cards-container').innerHTML = '';
       calculateDerash();
 
-      // ወደ ሁለተኛው ስክሪን (Lobby / Cartela Selection) ማለፍ
+      // ወደ ሁለተኛው ስክሪን (Lobby / Cartela Selection) መውሰድ
       switchView('lobby-view');
     }
-	// ደራሽ ስሌት፦ 10 ብር ሲሆን (ካርቴላ * 8)፣ 20 ብር ሲሆን (ካርቴላ * 16)
+
+    // ደራሽ ስሌት፦ 10 ብር ሲሆን (ካርቴላ * 8)፣ 20 ብር ሲሆን (ካርቴላ * 16)
     function calculateDerash() {
       var multiplier = (currentStake === 10) ? 8 : 16;
       var derash = selectedCartelas.length * multiplier;
@@ -359,7 +388,7 @@
       }
     }
 
-    // Bottom Navigation
+    // Navigation መቀያየሪያ
     function navigate(tabName, btn) {
       document.querySelectorAll('.bottom-nav .nav-item').forEach(function(b) { b.classList.remove('active'); });
       if (btn) btn.classList.add('active');
@@ -367,17 +396,15 @@
       if (tabName === 'game-tab') {
         if (isPlaying) {
           switchView('game-view');
-        } else if (selectedCartelas.length > 0 || currentActiveView === 'lobby-view') {
-          switchView('lobby-view');
         } else {
-          switchView('welcome-view');
+          switchView('lobby-view');
         }
       } else {
         switchView(tabName);
       }
     }
 
-    // 1 - 600 Cartela መፍጠሪያ
+    // 1 - 600 Cartela ቁልፎች መፍጠሪያ
     var cartelaBox = document.getElementById('cartela-container');
     if (cartelaBox) {
       cartelaBox.innerHTML = '';
@@ -393,16 +420,19 @@
       }
     }
 
+    // ካርቴላ መምረጥ እና መቀያየር
     function toggleCartela(id, btn) {
       if (isPlaying) return;
       var idx = selectedCartelas.indexOf(id);
       if (idx > -1) {
+        // መልሶ ማንሳት
         selectedCartelas.splice(idx, 1);
         btn.classList.remove('selected');
         delete generatedCardsData[id];
       } else {
+        // ገደቡ ከሞላ ሌላ መምረጥ አይቻልም (አንዱን አንስቶ ሌላ መምረጥ ይችላል)
         if (selectedCartelas.length >= maxCartelas) {
-          alert("ለ " + currentStake + " ብር ጨዋታ ከ " + maxCartelas + " ካርቴላ በላይ መምረጥ አይቻልም!");
+          alert("ለ " + currentStake + " ብር ጨዋታ " + maxCartelas + " ካርቴላ ብቻ መምረጥ ይችላሉ! ለመቀየር ቀድመው የመረጡትን ያንሱ።");
           return;
         }
         selectedCartelas.push(id);
@@ -414,7 +444,16 @@
       drawCards();
     }
 
-    function makeMatrix() {
+    // ለሁለተኛው ስክሪን ብቻ የተዘጋጀ Refresh Button (የተመረጡትን ካርቴላ ቁጥሮች ይቀይራል)
+    function refreshCartelaMatrix() {
+      if (isPlaying || selectedCartelas.length === 0) return;
+      for (var i = 0; i < selectedCartelas.length; i++) {
+        var id = selectedCartelas[i];
+        generatedCardsData[id] = makeMatrix();
+      }
+      drawCards();
+    }
+	function makeMatrix() {
       var getCol = function(min, max) {
         var arr = [];
         while (arr.length < 5) {
@@ -456,7 +495,7 @@
       }
     }
 
-    // 1 - 75 Master Board Columns (B: 1-15, I: 16-30, N: 31-45, G: 46-60, O: 61-75)
+    // 1 - 75 Master Board Columns መገንባት
     var ranges = { 
       B: [1, 15], 
       I: [16, 30], 
@@ -464,7 +503,8 @@
       G: [46, 60], 
       O: [61, 75] 
     };
-	for (var key in ranges) {
+
+    for (var key in ranges) {
       var col = document.getElementById('col-' + key);
       if (col) {
         for (var n = ranges[key][0]; n <= ranges[key][1]; n++) {
@@ -477,7 +517,7 @@
       }
     }
 
-    // 49 ሰከንድ ቆጣሪ (ደቂቃው 0 ሲሆን ጨዋታው ይጀምራል)
+    // 49 ሰከንድ ቆጣሪ (ደቂቃው 0 ሲሆን ጨዋታ ይጀምራል)
     var countdownElem = document.getElementById('countdown');
     setInterval(function() {
       if (isPlaying) return;
@@ -492,74 +532,143 @@
       }
     }, 1000);
 
-    // ደቂቃው 0 ሲሆን የሚከናወን የጨዋታ ዑደት
+    // ደቂቃው 0 ሲሆን የሚከናወን
     function startGameplay() {
       isPlaying = true;
 
-      // 1. Top Bar ወደ Game Stats መቀየር
+      // Top Bar ወደ Game Stats መቀየር
       document.getElementById('lobby-stats').style.display = 'none';
       document.getElementById('gameplay-stats').style.display = 'flex';
       document.getElementById('top-game-id').innerText = '#' + String(gameId).padStart(4, '0');
       document.getElementById('top-bet').innerText = currentStake;
       calculateDerash();
 
-      // 2. ቀጥታ ወደ 3ኛው ስክሪን (Live Game) ማለፍ
+      // ወደ Game View ማለፍ
       switchView('game-view');
 
-      // የተመረጡትን ካርቴላዎች በጨዋታው ገፅ ላይ ማሳየት
+      // የተመረጡትን ካርቴላዎች ማሳየት
       var inGameCont = document.getElementById('in-game-cards');
       inGameCont.innerHTML = document.getElementById('active-cards-container').innerHTML;
 
-      // 3. የቁጥሮች ጥሪ (Ball Caller Simulation)
+      // ቁጥሮች መጥራት
       calledBalls = [];
+      calledSet = new Set();
       var deck = [];
       for (var i = 1; i <= 75; i++) deck.push(i);
       deck.sort(function() { return 0.5 - Math.random(); });
 
       gameInterval = setInterval(function() {
         if (deck.length === 0 || calledBalls.length >= 75) {
-          endGameplay();
+          endGameplay("Draw! ምንም አሸናፊ ሳይገኝ ጨዋታው ተጠናቋል!");
           return;
         }
 
         var ball = deck.pop();
         calledBalls.push(ball);
+        calledSet.add(ball);
 
         var letter = ball <= 15 ? 'B' : ball <= 30 ? 'I' : ball <= 45 ? 'N' : ball <= 60 ? 'G' : 'O';
         document.getElementById('current-call').innerText = letter + '-' + ball;
         document.getElementById('top-called').innerText = calledBalls.length;
 
-        // Master Board ላይ አረንጓዴ ማድረግ
+        // Master Board Highlight
         var pill = document.getElementById('pill-' + ball);
         if (pill) pill.classList.add('called');
-
-        // በካርቴላዎች ላይ ምልክት ማድረግ
+		// ካርቴላዎች ላይ ምልክት ማድረግ
         for (var k = 0; k < selectedCartelas.length; k++) {
           var cid = selectedCartelas[k];
           var cell = document.getElementById('card-' + cid + '-' + ball);
           if (cell) cell.classList.add('marked');
         }
+
+        // አሸናፊ (Winner) ማረጋገጥ (Rows, Columns, Diagonals)
+        checkWinner();
+
       }, 2000);
     }
 
-    function endGameplay() {
+    // አሸናፊውን የመለየት ሎጂክ (Win Validator)
+    function checkWinner() {
+      var cols = ['B', 'I', 'N', 'G', 'O'];
+
+      for (var k = 0; k < selectedCartelas.length; k++) {
+        var cid = selectedCartelas[k];
+        var mat = generatedCardsData[cid];
+        if (!mat) continue;
+
+        var grid = [[false,false,false,false,false],
+                    [false,false,false,false,false],
+                    [false,false,false,false,false],
+                    [false,false,false,false,false],
+                    [false,false,false,false,false]];
+
+        for (var r = 0; r < 5; r++) {
+          for (var c = 0; c < 5; c++) {
+            if (r === 2 && c === 2) {
+              grid[r][c] = true;
+            } else {
+              var val = mat[cols[c]][r];
+              grid[r][c] = calledSet.has(val);
+            }
+          }
+        }
+
+        // 1. ረድፎች (Horizontal Rows)
+        for (var r = 0; r < 5; r++) {
+          if (grid[r].every(Boolean)) {
+            endGameplay("🎉 ቢንጎ! ካርቴላ #" + cid + " በረድፍ " + (r + 1) + " አሸንፏል!");
+            return;
+          }
+        }
+
+        // 2. ቁልቁል መስመሮች (Vertical Columns)
+        for (var c = 0; c < 5; c++) {
+          var colWin = true;
+          for (var r = 0; r < 5; r++) {
+            if (!grid[r][c]) { colWin = false; break; }
+          }
+          if (colWin) {
+            endGameplay("🎉 ቢንጎ! ካርቴላ #" + cid + " በመስመር " + cols[c] + " አሸንፏል!");
+            return;
+          }
+        }
+
+        // 3. ዲያጎናል (Diagonals)
+        var diag1 = true, diag2 = true;
+        for (var i = 0; i < 5; i++) {
+          if (!grid[i][i]) diag1 = false;
+          if (!grid[i][4 - i]) diag2 = false;
+        }
+        if (diag1 || diag2) {
+          endGameplay("🎉 ቢንጎ! ካርቴላ #" + cid + " በዲያጎናል መስመር አሸንፏል!");
+          return;
+        }
+      }
+    }
+
+    function endGameplay(winMessage) {
       clearInterval(gameInterval);
-      alert("ጨዋታው ተጠናቋል!");
+      alert(winMessage);
 
       setTimeout(function() {
         isPlaying = false;
         seconds = 49;
         gameId++;
         calledBalls = [];
+        calledSet.clear();
         selectedCartelas = [];
         generatedCardsData = {};
 
-        // Top Bar እና Views Reset
+        // Reset Bars
         document.getElementById('lobby-stats').style.display = 'flex';
         document.getElementById('gameplay-stats').style.display = 'none';
+        document.getElementById('app-top-bar').style.display = 'none';
+        document.getElementById('app-bottom-nav').style.display = 'none';
+
+        // ወደ መጀመሪያው ስክሪን መመለስ
         switchView('welcome-view');
 
-        // Clear Selection
+        // Reset Cartela Screen
         document.querySelectorAll('.cartela-btn').forEach(function(b) { b.classList.remove('selected'); });
         document.getElementById('selected-count').innerText = 0;
         document.getElementById('active-cards-container').innerHTML = '';
